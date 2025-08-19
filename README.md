@@ -1,70 +1,79 @@
-# React + TypeScript + Vite
+# RAG Chat
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Retrieve, Augment, Generate Chatbot Application**
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+RAG Chat is an open-source chatbot application designed to retrieve and process information from various sources, augment its knowledge, and generate human-like responses. The application utilizes a combination of natural language processing (NLP) and machine learning (ML) techniques to provide a conversational interface for users.
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+* Multi-source information retrieval: Retrieve information from files (PDF, text), websites, and raw text input.
+* Text extraction and processing: Extract text from PDF files, split into chunks, and store embeddings in a Qdrant vector store.
+* Knowledge augmentation: Leverage stored information to improve chatbot responses.
+* Conversational interface: User-friendly interface for interactive conversations.
+* Response generation: Generate human-like responses based on user input and acquired knowledge.
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Technical Details
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+* Frontend: React + TypeScript
+* Backend: Node.js + Express.js
+* NLP and ML: OpenAI embeddings, Qdrant vector store
+* Database: Qdrant vector store for efficient storage and retrieval
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Getting Started
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/dkbera01/rag-chat.git
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Install dependencies:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+# or
+yarn install
 ```
-# rag-chat
+
+3. Start the application:
+
+```bash
+npm start
+# or
+yarn start
+```
+
+4. Open in your web browser:
+
+```
+http://localhost:3000
+```
+
+## Contributing
+
+Contributions are welcome! To contribute:
+
+1. Fork the repository.
+2. Make your changes.
+3. Submit a pull request.
+
+## License
+
+RAG Chat is licensed under the MIT License.
+
+## Acknowledgments
+
+* OpenAI – for providing embeddings and API.
+* Qdrant – for providing the vector store and API.
+
+## Roadmap
+
+* Improve conversational interface and response generation.
+* Integrate additional sources of information (databases, APIs).
+* Enhance knowledge augmentation and retrieval mechanisms.
+
+## Contact
+
+For questions, suggestions, or feedback, contact: [dkbera01@gmail.com](mailto:dkbera01@gmail.com)
