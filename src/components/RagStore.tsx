@@ -128,9 +128,12 @@ export default function RagStore({
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
-      const res = await fetch(`http://localhost:6333/collections/${deleteTarget}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `http://localhost:6333/collections/${deleteTarget}`,
+        {
+          method: "DELETE",
+        }
+      );
       if (res.ok) {
         setCollections((prev) => prev.filter((c) => c.name !== deleteTarget));
         setSelectedCollections((prev) => {
@@ -162,7 +165,7 @@ export default function RagStore({
         <h2 className="text-xl font-semibold text-white">RAG Store</h2>
         <button
           onClick={toggleSelectAll}
-          className="py-1 px-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold text-white text-sm"
+          className="py-1 px-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-white text-sm"
         >
           {selectedCollections.length === collections.length
             ? "Deselect All"
@@ -171,104 +174,112 @@ export default function RagStore({
       </div>
 
       {/* Collection list */}
-      <ul className="space-y-2">
-        <AnimatePresence>
-          {collections.map((collection) => (
-            <motion.li
-              key={collection.name}
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.3 }}
-              layout
-              className="text-gray-300 transition hover:bg-black/30 rounded-xl p-3 cursor-pointer border border-transparent hover:border-cyan-500"
-            >
-              <div className="flex justify-between items-center">
-                {/* Custom checkbox */}
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center mr-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedCollections.includes(collection.name)}
-                    onChange={() => toggleSelect(collection.name)}
-                    className="w-4 h-4 accent-cyan-500 cursor-pointer rounded"
-                  />
+      <div
+        className="overflow-y-auto scrollbar-custom"
+        style={{ maxHeight: "calc(70vh - 100px)" }}
+      >
+        <ul className="space-y-2">
+          <AnimatePresence>
+            {collections.map((collection) => (
+              <motion.li
+                key={collection.name}
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                layout
+                className="text-gray-300 transition hover:bg-black/30 rounded-xl p-3 cursor-pointer border border-transparent hover:border-indigo-500"
+              >
+                <div className="flex justify-between items-center">
+                  {/* Custom checkbox */}
+                  <div
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center mr-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedCollections.includes(collection.name)}
+                      onChange={() => toggleSelect(collection.name)}
+                      className="w-4 h-4 accent-indigo-500 cursor-pointer rounded"
+                    />
+                  </div>
+
+                  {/* Collection name */}
+                  <span
+                    className="flex-1 cursor-pointer hover:text-indigo-400"
+                    onClick={() => handleToggle(collection.name)}
+                  >
+                    {collection.name}
+                  </span>
+
+                  {/* Trash icon */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteTarget(collection.name);
+                    }}
+                    className="p-2 rounded-full hover:bg-red-500/30 hover:text-red-400 transition"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                 </div>
 
-                {/* Collection name */}
-                <span
-                  className="flex-1 cursor-pointer hover:text-cyan-400"
-                  onClick={() => handleToggle(collection.name)}
-                >
-                  {collection.name}
-                </span>
+                {/* Collection details */}
+                <AnimatePresence>
+                  {openCollection === collection.name && (
+                    <motion.div
+                      key={collection.name + "-details"}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.35, ease: "easeInOut" }}
+                      className="overflow-hidden mt-3 bg-black/40 p-4 rounded-xl border border-white/10"
+                    >
+                      {loading && (
+                        <p className="text-gray-400">Loading details...</p>
+                      )}
 
-                {/* Trash icon */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteTarget(collection.name);
-                  }}
-                  className="p-2 rounded-full hover:bg-red-500/30 hover:text-red-400 transition"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
-
-              {/* Collection details */}
-              <AnimatePresence>
-                {openCollection === collection.name && (
-                  <motion.div
-                    key={collection.name + "-details"}
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.35, ease: "easeInOut" }}
-                    className="overflow-hidden mt-3 bg-black/40 p-4 rounded-xl border border-white/10"
-                  >
-                    {loading && <p className="text-gray-400">Loading details...</p>}
-
-                    {!loading && details && (
-                      <>
-                        {sources.length > 0 && (
-                          <>
-                            <h3 className="text-lg font-semibold text-cyan-400">
-                              Sources
-                            </h3>
-                            <ul className="list-disc list-inside text-gray-300 mb-4">
-                              {sources.map((src) => (
-                                <li key={src}>{src}</li>
-                              ))}
-                            </ul>
-                          </>
-                        )}
-                        <h3 className="text-lg font-semibold text-cyan-400">
-                          Content
-                        </h3>
-                        {points.length > 0 ? (
-                          points.map((point) => (
-                            <pre
-                              key={point.id}
-                              className="bg-black/30 p-2 rounded mt-2 text-xs overflow-x-auto"
-                            >
-                              {JSON.stringify(point.payload, null, 2)}
-                            </pre>
-                          ))
-                        ) : (
-                          <p className="text-gray-400">No sample points found</p>
-                        )}
-                      </>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.li>
-          ))}
-        </AnimatePresence>
-      </ul>
-
+                      {!loading && details && (
+                        <>
+                          {sources.length > 0 && (
+                            <>
+                              <h3 className="text-lg font-semibold text-indigo-400">
+                                Sources
+                              </h3>
+                              <ul className="list-disc list-inside text-gray-300 mb-4">
+                                {sources.map((src) => (
+                                  <li key={src}>{src}</li>
+                                ))}
+                              </ul>
+                            </>
+                          )}
+                          <h3 className="text-lg font-semibold text-indigo-400">
+                            Content
+                          </h3>
+                          {points.length > 0 ? (
+                            points.map((point) => (
+                              <pre
+                                key={point.id}
+                                className="bg-black/30 p-2 rounded mt-2 text-xs overflow-x-auto"
+                              >
+                                {JSON.stringify(point.payload, null, 2)}
+                              </pre>
+                            ))
+                          ) : (
+                            <p className="text-gray-400">
+                              No sample points found
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.li>
+            ))}
+          </AnimatePresence>
+        </ul>
+      </div>
       {/* Delete confirmation modal */}
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">

@@ -44,11 +44,12 @@ export default function ChatbotApp() {
   // Chat message sending
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return toast.error("Please enter a message!");
-    if (selectedCollections.length === 0) return toast.error("Please select at least one collection!");
+    if (selectedCollections.length === 0)
+      return toast.error("Please select at least one collection!");
 
     setChatHistory((prev) => [...prev, { sender: "user", text: chatInput }]);
     setChatInput("");
-
+return
     setLoadingChat(true);
     try {
       const embeddings = new OpenAIEmbeddings({
@@ -77,7 +78,10 @@ export default function ChatbotApp() {
       const res = await fetch("http://localhost:5000/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemPrompt: SYSTEM_PROMPT, userPrompt: chatInput }),
+        body: JSON.stringify({
+          systemPrompt: SYSTEM_PROMPT,
+          userPrompt: chatInput,
+        }),
       });
 
       const data = await res.json();
@@ -99,7 +103,8 @@ export default function ChatbotApp() {
       try {
         for (const file of files) {
           const arrayBuffer = await file.arrayBuffer();
-          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer })
+            .promise;
 
           let fullText = "";
           for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -108,11 +113,25 @@ export default function ChatbotApp() {
             fullText += content.items.map((item) => item.str).join(" ") + "\n";
           }
 
-          const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000, chunkOverlap: 200 });
-          const docs = await splitter.splitDocuments([new Document({ pageContent: fullText, metadata: { fileName: file.name } })]);
+          const splitter = new RecursiveCharacterTextSplitter({
+            chunkSize: 1000,
+            chunkOverlap: 200,
+          });
+          const docs = await splitter.splitDocuments([
+            new Document({
+              pageContent: fullText,
+              metadata: { fileName: file.name },
+            }),
+          ]);
 
-          const embeddings = new OpenAIEmbeddings({ model: "text-embedding-3-large", openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY });
-          await QdrantVectorStore.fromDocuments(docs, embeddings, { url: import.meta.env.VITE_QDRANT_URL, collectionName: `${file.name}` });
+          const embeddings = new OpenAIEmbeddings({
+            model: "text-embedding-3-large",
+            openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
+          });
+          await QdrantVectorStore.fromDocuments(docs, embeddings, {
+            url: import.meta.env.VITE_QDRANT_URL,
+            collectionName: `${file.name}`,
+          });
         }
         toast.success("Files processed successfully!");
       } catch (err) {
@@ -129,11 +148,18 @@ export default function ChatbotApp() {
 
       try {
         const title = rawText.slice(0, 30).replace(/\s+/g, "_");
-        const embeddings = new OpenAIEmbeddings({ model: "text-embedding-3-large", openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY });
-        await QdrantVectorStore.fromDocuments([new Document({ pageContent: rawText, metadata: { title: title } })], embeddings, {
-          url: import.meta.env.VITE_QDRANT_URL,
-          collectionName: `${title}_${Date.now()}`,
+        const embeddings = new OpenAIEmbeddings({
+          model: "text-embedding-3-large",
+          openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
         });
+        await QdrantVectorStore.fromDocuments(
+          [new Document({ pageContent: rawText, metadata: { title: title } })],
+          embeddings,
+          {
+            url: import.meta.env.VITE_QDRANT_URL,
+            collectionName: `${title}_${Date.now()}`,
+          }
+        );
         toast.success("Text processed successfully!");
       } catch (err) {
         toast.error("Error processing text!");
@@ -144,15 +170,63 @@ export default function ChatbotApp() {
     }
 
     if (type === "website") {
-      if (!websiteLinks.trim()) return toast.error("Please enter website links!");
+      if (!websiteLinks.trim())
+        return toast.error("Please enter website links!");
       setLoadingWebsite(true);
 
       try {
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // simulate
-        toast.success("Website processed successfully!");
+        const links = websiteLinks
+          .split("\n")
+          .map((link) => link.trim())
+          .filter((link) => link);
+
+        if (links.length > 10) {
+          return toast.error("Please enter up to 10 website links!");
+        }
+
+        const embeddings = new OpenAIEmbeddings({
+          model: "text-embedding-3-large",
+          openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
+        });
+
+        for (const link of links) {
+          const response = await fetch("http://localhost:5000/api/scrape", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: link }),
+          });
+          const data = await response.json();
+
+          const docs = data.documents.map((item: any) => {
+            return new Document(item);
+          });
+          console.log("docs", docs);
+
+          // Split large pages
+          const splitter = new RecursiveCharacterTextSplitter({
+            chunkSize: 1000,
+            chunkOverlap: 200,
+          });
+          const splitDocs = await splitter.splitDocuments(docs);
+          console.log(splitDocs);
+
+          // Store in Qdrant with unique collection name
+          const collectionName = link
+            .replace(/https?:\/\//, "")
+            .replace(/[^a-zA-Z0-9]/g, "_");
+
+          console.log(collectionName);
+
+          await QdrantVectorStore.fromDocuments(splitDocs, embeddings, {
+            url: import.meta.env.VITE_QDRANT_URL,
+            collectionName: `${collectionName}`,
+          });
+        }
+
+        toast.success("Website(s) processed successfully!");
       } catch (err) {
-        toast.error("Error processing website links!");
         console.error(err);
+        toast.error("Error processing website links!");
       } finally {
         setLoadingWebsite(false);
       }
@@ -183,7 +257,10 @@ export default function ChatbotApp() {
       </div>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
-        <RagStore refresh={refreshStore} onSelectChange={(collections) => setSelectedCollections(collections)} />
+        <RagStore
+          refresh={refreshStore}
+          onSelectChange={(collections) => setSelectedCollections(collections)}
+        />
         <ChatWindow
           chatHistory={chatHistory}
           chatInput={chatInput}
@@ -205,13 +282,17 @@ export default function ChatbotApp() {
               onChange={(e) => setFiles(Array.from(e.target.files))}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
-            <Upload className="w-10 h-10 text-cyan-400 mb-2" />
+            <Upload className="w-10 h-10 text-indigo-400 mb-2" />
             <p className="text-gray-300">Click or drag files to upload</p>
-            {files.length > 0 && <div className="text-sm text-gray-300 mt-3">{files.length} file(s) selected</div>}
+            {files.length > 0 && (
+              <div className="text-sm text-gray-300 mt-3">
+                {files.length} file(s) selected
+              </div>
+            )}
           </div>
           <button
             onClick={() => handleAddSource("file")}
-            className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
             disabled={loadingFile}
           >
             {loadingFile && <Loader className="w-5 h-5 animate-spin" />}
@@ -222,21 +303,32 @@ export default function ChatbotApp() {
 
       {/* Website Modal */}
       {showWebsiteModal && (
-        <Modal title="Add Website Link" onClose={() => setShowWebsiteModal(false)}>
+        <Modal
+          title="Add Website Links"
+          onClose={() => setShowWebsiteModal(false)}
+        >
           <textarea
             placeholder="Paste website links here..."
             value={websiteLinks}
             onChange={(e) => setWebsiteLinks(e.target.value)}
-            className="w-full p-3 rounded bg-black/60 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500 h-48 mb-6"
+            className="w-full p-3 rounded bg-black/60 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-48 mb-6"
           />
           <button
             onClick={() => handleAddSource("website")}
-            className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
             disabled={loadingWebsite}
           >
             {loadingWebsite && <Loader className="w-5 h-5 animate-spin" />}
             Add Source
           </button>
+          <p className="mt-2 text-sm text-yellow-300 mb-3 flex items-start gap-2">
+            <span className="mt-0.5">ℹ️</span>
+            <span>
+              You can add <strong>up to 10 website links</strong> at a time.
+              <br />
+              Make sure each link is on a separate line.
+            </span>
+          </p>
         </Modal>
       )}
 
@@ -247,11 +339,11 @@ export default function ChatbotApp() {
             placeholder="Paste any raw text content here..."
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
-            className="w-full p-3 rounded bg-black/60 border border-white/10 focus:outline-none focus:ring-2 focus:ring-cyan-500 h-48 mb-6"
+            className="w-full p-3 rounded bg-black/60 border border-white/10 focus:outline-none focus:ring-2 focus:ring-indigo-500 h-48 mb-6"
           />
           <button
             onClick={() => handleAddSource("text")}
-            className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-lg flex items-center justify-center gap-2"
             disabled={loadingText}
           >
             {loadingText && <Loader className="w-5 h-5 animate-spin" />}
