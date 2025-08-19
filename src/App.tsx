@@ -20,7 +20,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { QdrantVectorStore } from "@langchain/qdrant";
 
-export default function ChatbotApp() {
+export default function App() {
   const [showFileModal, setShowFileModal] = useState(false);
   const [showWebsiteModal, setShowWebsiteModal] = useState(false);
   const [showTextModal, setShowTextModal] = useState(false);
@@ -41,6 +41,8 @@ export default function ChatbotApp() {
   const [loadingText, setLoadingText] = useState(false);
   const [loadingWebsite, setLoadingWebsite] = useState(false);
 
+  const sourceCountLimit = 10;
+
   // Chat message sending
   const handleSendMessage = async () => {
     if (!chatInput.trim()) return toast.error("Please enter a message!");
@@ -49,8 +51,8 @@ export default function ChatbotApp() {
 
     setChatHistory((prev) => [...prev, { sender: "user", text: chatInput }]);
     setChatInput("");
-return
     setLoadingChat(true);
+    return;
     try {
       const embeddings = new OpenAIEmbeddings({
         model: "text-embedding-3-large",
@@ -215,8 +217,6 @@ return
             .replace(/https?:\/\//, "")
             .replace(/[^a-zA-Z0-9]/g, "_");
 
-          console.log(collectionName);
-
           await QdrantVectorStore.fromDocuments(splitDocs, embeddings, {
             url: import.meta.env.VITE_QDRANT_URL,
             collectionName: `${collectionName}`,
@@ -252,6 +252,8 @@ return
           onFile={() => setShowFileModal(true)}
           onWebsite={() => setShowWebsiteModal(true)}
           onText={() => setShowTextModal(true)}
+          sourceCountLimit={sourceCountLimit}
+          sourceCount={sourceCount}
         />
         <ProgressBar sourceCount={sourceCount} />
       </div>
@@ -260,6 +262,7 @@ return
         <RagStore
           refresh={refreshStore}
           onSelectChange={(collections) => setSelectedCollections(collections)}
+          setSourceCount={setSourceCount}
         />
         <ChatWindow
           chatHistory={chatHistory}

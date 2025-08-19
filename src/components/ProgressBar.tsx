@@ -1,4 +1,4 @@
-export default function ProgressBar({ sourceCount }) {
+export default function ProgressBar({ sourceCount }: { sourceCount: number }) {
   const progressPercent = (sourceCount / 10) * 100;
 
   return (

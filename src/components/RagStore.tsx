@@ -20,9 +20,11 @@ interface Point {
 export default function RagStore({
   refresh,
   onSelectChange,
+  setSourceCount
 }: {
   refresh: boolean;
   onSelectChange: (collections: string[]) => void;
+  setSourceCount: (count: number) => void;
 }) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
@@ -40,6 +42,7 @@ export default function RagStore({
       .then((data) => {
         if (data.result?.collections) {
           const fetched = data.result.collections;
+          setSourceCount(fetched.length);
           setCollections(fetched);
 
           const fetchedNames = fetched.map((c: any) => c.name);
@@ -162,7 +165,7 @@ export default function RagStore({
     <section className="bg-black/50 rounded-2xl p-4 shadow-lg relative">
       {/* Header */}
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-xl font-semibold text-white">RAG Store</h2>
+        <h2 className="text-xl font-semibold text-white">Sources</h2>
         <button
           onClick={toggleSelectAll}
           className="py-1 px-3 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-semibold text-white text-sm"
