@@ -1,4 +1,7 @@
 import { Send, Loader } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
 export default function ChatWindow({
   chatHistory,
   chatInput,
@@ -15,7 +18,7 @@ export default function ChatWindow({
   return (
     <section className="bg-black/50 rounded-2xl p-4 shadow-lg flex flex-col">
       <h2 className="text-xl font-semibold mb-3">Chat</h2>
-      <div className="flex-1 overflow-y-auto space-y-2 mb-3 p-2 bg-black/30 rounded">
+      <div className="flex-1 overflow-y-auto space-y-2 mb-3 p-2 bg-black/30 rounded scrollbar-custom" style={{ maxHeight: "calc(80vh - 100px)" }}>
         {chatHistory.map((msg, idx) => (
           <div
             key={idx}
@@ -25,7 +28,7 @@ export default function ChatWindow({
                 : "bg-gray-700 self-start mr-auto"
             }`}
           >
-            {msg.text}
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text}</ReactMarkdown>
           </div>
         ))}
         {loading && (

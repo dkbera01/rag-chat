@@ -54,7 +54,7 @@ export default function RagStore({
         }
       })
       .catch(console.error);
-  }, [refresh]);
+  }, [refresh, deleteTarget]);
 
   // Toggle single collection selection
   const toggleSelect = (name: string) => {

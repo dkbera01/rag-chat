@@ -52,7 +52,6 @@ export default function App() {
     setChatHistory((prev) => [...prev, { sender: "user", text: chatInput }]);
     setChatInput("");
     setLoadingChat(true);
-    return;
     try {
       const embeddings = new OpenAIEmbeddings({
         model: "text-embedding-3-large",
@@ -74,6 +73,7 @@ export default function App() {
       const SYSTEM_PROMPT = `
         You are a helpful assistant. Use the following context to answer the user's question.
         Only answer based on the available context.
+        When it's a pdf, display page number also
         Context: ${JSON.stringify(allResults)}
       `;
 
@@ -104,36 +104,83 @@ export default function App() {
 
       try {
         for (const file of files) {
-          const arrayBuffer = await file.arrayBuffer();
-          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer })
-            .promise;
-
-          let fullText = "";
-          for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const content = await page.getTextContent();
-            fullText += content.items.map((item) => item.str).join(" ") + "\n";
+          const fileExt = file.name.split(".").pop()?.toLowerCase();
+          if (fileExt !== "pdf" && fileExt !== "csv") {
+            toast.error(`Unsupported file type: ${file.name}`);
+            continue;
           }
-
           const splitter = new RecursiveCharacterTextSplitter({
             chunkSize: 1000,
-            chunkOverlap: 200,
+            chunkOverlap: 1,
           });
-          const docs = await splitter.splitDocuments([
-            new Document({
-              pageContent: fullText,
-              metadata: { fileName: file.name },
-            }),
-          ]);
 
           const embeddings = new OpenAIEmbeddings({
             model: "text-embedding-3-large",
             openAIApiKey: import.meta.env.VITE_OPENAI_API_KEY,
           });
-          await QdrantVectorStore.fromDocuments(docs, embeddings, {
-            url: import.meta.env.VITE_QDRANT_URL,
-            collectionName: `${file.name}`,
-          });
+
+          if (fileExt === "pdf") {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer })
+              .promise;
+
+            let fullText = "";
+            for (let i = 1; i <= pdfDoc.numPages; i++) {
+              const page = await pdfDoc.getPage(i);
+              const content = await page.getTextContent();
+              fullText +=
+                content.items.map((item) => item.str).join(" ") + "\n";
+            }
+
+            const docs = await splitter.splitDocuments([
+              new Document({
+                pageContent: fullText,
+                metadata: { fileName: file.name },
+              }),
+            ]);
+            await QdrantVectorStore.fromDocuments(docs, embeddings, {
+              url: import.meta.env.VITE_QDRANT_URL,
+              collectionName: `${file.name}`,
+            });
+          }
+
+          if (fileExt === "csv") {
+            const text = await file.text();
+
+            // const loader = new CSVLoader(
+            //   new Blob([text], { type: "text/csv" })
+            // );
+
+            // const docs = await loader.load();
+
+            const docs = await splitter.splitDocuments([
+              new Document({
+                pageContent: text,
+                metadata: { fileName: file.name },
+              }),
+            ]);
+
+            await QdrantVectorStore.fromDocuments(docs, embeddings, {
+              url: import.meta.env.VITE_QDRANT_URL,
+              collectionName: `${file.name}`,
+            });
+
+            // const arrayBuffer = await file.arrayBuffer();
+            // const csvData = await parseCSV(arrayBuffer);
+            // const docs = csvData.map((row) => {
+            //   return new Document({
+            //     pageContent: JSON.stringify(row),
+            //     metadata: { fileName: file.name },
+            //   });
+            // });
+
+            // const splitDocs = await splitter.splitDocuments(docs);
+
+            // await QdrantVectorStore.fromDocuments(splitDocs, embeddings, {
+            //   url: import.meta.env.VITE_QDRANT_URL,
+            //   collectionName: `${file.name}`,
+            // });
+          }
         }
         toast.success("Files processed successfully!");
       } catch (err) {
@@ -242,6 +289,11 @@ export default function App() {
     setShowTextModal(false);
   };
 
+  const userLogin = () => {
+    toast.error("You have reached the maximum number of sources!");
+    //TODO: Setup login modal
+  };
+
   return (
     <div className="min-h-screen flex flex-col text-white bg-gradient-to-br from-[#1a001a] to-[#06191c]">
       <Toaster position="top-right" reverseOrder={false} />
@@ -249,9 +301,21 @@ export default function App() {
 
       <div className="p-4 space-y-4">
         <SourceButtons
-          onFile={() => setShowFileModal(true)}
-          onWebsite={() => setShowWebsiteModal(true)}
-          onText={() => setShowTextModal(true)}
+          onFile={() =>
+            sourceCount < sourceCountLimit
+              ? setShowFileModal(true)
+              : userLogin()
+          }
+          onWebsite={() =>
+            sourceCount < sourceCountLimit
+              ? setShowWebsiteModal(true)
+              : userLogin()
+          }
+          onText={() =>
+            sourceCount < sourceCountLimit
+              ? setShowTextModal(true)
+              : userLogin()
+          }
           sourceCountLimit={sourceCountLimit}
           sourceCount={sourceCount}
         />
@@ -282,6 +346,7 @@ export default function App() {
             <input
               type="file"
               multiple
+              accept=".pdf,.csv"
               onChange={(e) => setFiles(Array.from(e.target.files))}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
