@@ -1,0 +1,2 @@
+VITE_QDRANT_URL=http://localhost:6333/
+VITE_OPENAI_API_KEY=your-api-key
