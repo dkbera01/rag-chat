@@ -21,6 +21,34 @@ RAG Chat is an open-source chatbot application designed to retrieve and process 
 * NLP and ML: OpenAI embeddings, Qdrant vector store
 * Database: Qdrant vector store for efficient storage and retrieval
 
+## Node.js Server Setup
+
+To run the backend server:
+
+1. Navigate to the backend folder
+
+```bash
+cd backend
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+```
+
+3. Start the server:
+
+```bash
+npm run start
+# or
+node server.js
+```
+
+4. The server will run on default port `5000` (or as configured) and handle API requests from the frontend.
+
 ## Getting Started
 
 1. Clone the repository:
@@ -37,7 +65,7 @@ npm install
 yarn install
 ```
 
-3. Start the application:
+3. Start the frontend application:
 
 ```bash
 npm start
@@ -50,6 +78,25 @@ yarn start
 ```
 http://localhost:3000
 ```
+
+
+## Docker Setup
+
+RAG Chat can use Docker to run Qdrant as a service.
+
+### Steps
+
+1. Navigate to the rag folder
+```bash
+cd rag
+```
+2. Start the service:
+```bash
+docker-compose up -d
+```
+
+4. Qdrant will be accessible at `http://localhost:6333` for storing and retrieving vector data.
+
 
 ## Contributing
 
@@ -76,4 +123,4 @@ RAG Chat is licensed under the MIT License.
 
 ## Contact
 
-For questions, suggestions, or feedback, contact: [dkbera01@gmail.com](mailto:dkbera01@gmail.com)
+For questions, suggestions, or feedback, contact: [dhavalbera25@gmail.com](mailto:dhavalbera25@gmail.com)
